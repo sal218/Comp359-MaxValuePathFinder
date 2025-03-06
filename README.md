@@ -3,5 +3,5 @@ This program finds the optimal path from (0,0) to (n-1,n-1) on an n × n chessbo
 
 
 # Members:
-Sal Mourad
+Sal Mourad \
 Simar Padda
