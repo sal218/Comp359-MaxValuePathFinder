@@ -10,7 +10,13 @@ This program finds the optimal path from (0,0) to (n-1,n-1) on an n × n chessbo
 - To run the program open the terminal and run
 ```bash
 python3 main.py
+
+python src/main.py
 ```
 
 # Running the test cases
-PENDING
+
+python tests/test_3X3.py
+python tests/test_4x4.py
+python tests/test_5x5.py
+
