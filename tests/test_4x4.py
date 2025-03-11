@@ -50,7 +50,7 @@ def draw_board_and_path(canvas, board, path):
             arrow=tk.LAST,
             width=2,
             fill="red",
-            dash=(4, 2)  # pattern of 4-pixel dash, 2-pixel space
+            dash=(4, 2) 
         )
 
 
