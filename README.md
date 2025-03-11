@@ -32,7 +32,7 @@ python src/main.py
 python tests/test_3X3.py
 python tests/test_4x4.py
 python tests/test_5x5.py
-python tests/test_5x5.py
+python tests/test_6x6.py
 ```
 2. The UI will appear and prompt the user to enter in their desired n value to create the board
 > Note: Since this is a test case, the n value has been pre-defined.
