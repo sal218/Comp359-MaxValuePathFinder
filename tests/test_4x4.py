@@ -9,7 +9,7 @@ import tkinter as tk
 from board import Board
 from pathfinder import PathFinder
 
-CELL_SIZE = 70  # adjust as needed
+CELL_SIZE = 70  
 
 def draw_board_and_path(canvas, board, path):
     n = board.n
@@ -91,9 +91,19 @@ def main():
 
     pathfinder = PathFinder(board)
     best_path, best_value = pathfinder.find_best_path()
-
+    
+    print("\n-------------------------------------")
+    print("\nManually Determined Results:")
+    print("\n-------------------------------------")
+    
+    print("\nThe Best Path is: [(0, 0), (1, 0), (2, 0), (3, 0), (3, 1), (2, 1), (1, 1), (0, 1), (0, 2), (0, 3), (1, 3), (1, 2), (2, 2), (3, 2), (3, 3)]")
+    print("\nMaximum Value Collected: 28")
+    
+    print("\n-------------------------------------")
+    print("\nAutogenrated Results Using Program:")
+    print("\n-------------------------------------")
     print("\nThe Best Path is:", best_path)
-    print(f"Maximum Value Collected: {best_value}\n")
+    print(f"\nMaximum Value Collected: {best_value}\n")
 
     
     run_gui(board, best_path, best_value)

@@ -1,66 +1,110 @@
+import heapq
+from board import Board
 
 class PathFinder:
+    # stores the board object and its dimensiom
     def __init__(self, board):
-         # stores the board object and its dimensiom
         self.board = board
+        # gets size of board
         self.n = board.n
-        self.directions = [[0, 1], [1, 0], [0, -1], [-1, 0]]  # defines right, down, left, up movements 
+        self.directions = [(1,0), (0,1), (0,-1), (-1,0)] # defines right, down, left, up movements 
 
-    def flatten_grid(self):
-        # we flatten the board into a list of containing tuples x, y, and value
-        flattened = []
-        # we now loop over each row (i) abd each column (j) in the board
+        # we create a sorted list containing all cell values in descending order
+        # This will alow us to estimate teh best possible sum remaining in the unexplored cells
+        all_values = []
         for i in range(self.n):
             for j in range(self.n):
-                # we appeach a tuple i, j, cell_value
-                flattened.append((i, j, self.board.get_value(i, j)))
-        # we return the list of all cells with their coordinates and values
-        return flattened
+                all_values.append(self.board.get_value(i, j))
+        self.sorted_values = sorted(all_values, reverse=True)
 
-    def build_path_tree(self, current_x, current_y, path, current_value, visited):
-        # This is considered our base case. We check if we're alreadelta_y at the bottom-right corner (n-1, n-1)
-        if (current_x, current_y) == (self.n - 1, self.n - 1):
-            # if we are, then we append (current_x, current_y) to path
-            path.append((current_x, current_y))
-            # we return the path and the total value so far
-            return path, current_value
+        self.best_value = float('-inf')
+        self.best_path = []
 
-        
-        visited.add((current_x, current_y)) # we now mark our current node so we dont revist unnessarily 
-        # we also keep track of the best path and best value
-        best_path = None
-        best_value = float('-inf')
+    # this function will calculate the max poissible future gain from unexplored cells
+    def possible_gain(self, visited_count):
+        # store n x n total cells
+        total_cells = self.n * self.n
+        # calculate the remaining unvisted cells 
+        unvisited = total_cells - visited_count
+        if unvisited <= 0:
+            return 0
+        # sum the top m highest values from our sorted list to get estimated future gain (this helps with pruning)
+        return sum(self.sorted_values[:unvisited])
 
-        # we loop over each direction to get the next node (new_x, new_y)
-        for delta_x, delta_y in self.directions:
-            new_x, new_y = current_x + delta_x, current_y + delta_y
+    # we now implement the Best-First Search with bounding using prioirty queue     
+    def branch_and_bound(self):
+        # we first initiliaze the search
+        start_visited = frozenset({(0,0)})
+        start_state = (0, 0, start_visited)
+        start_sum = 0
+        start_path = [(0,0)]
 
-            # this portion is to ensure that the next move is indeed inside the board and not already visited
-            if 0 <= new_x < self.n and 0 <= new_y < self.n and (new_x, new_y) not in visited:
-                # we udpate the values and store in new_x and new_y which account for total value so far plus the value of the new cell
-                new_value = current_value + self.board.get_value(new_x, new_y)
-                # we now recursively call build_path_tree to continue exploring deeper from (new_x, new_y).
-                # we pass an updated path plus the current_x and current_y and the new sum
-                new_path, new_total_value = self.build_path_tree(new_x, new_y, path + [(current_x, current_y)], new_value, visited)
+        # we compute the initial priority 
+        init_unvisited = (self.n * self.n) - len(start_visited) # determine the number of unvisted nodes/cells remaining 
+        init_future = sum(self.sorted_values[:init_unvisited])  # we now get the best possible sum from the remaining highest values in our sorted array
+        init_priority = start_sum + init_future # calcualte the priority which is 0 + init_future value
 
-                # If new_path and new_total_value is bigger than our best_value, we update best_path and best_value
-                if new_total_value > best_value:
-                    best_path = new_path
-                    best_value = new_total_value
+        priority_queue = []
+        # push the initial state into the priority queue 
+        heapq.heappush(priority_queue, (-init_priority, start_sum, 0, 0, start_visited, start_path)) # the reason for negative priority is so we can get the max value first
 
-        # backtracking: after exploring all directions, we then remove (current_x, current_y) from visited so we can use it again in other branches of the search
-        visited.remove((current_x, current_y))
-        # return best path and best value from this call
-        return best_path, best_value
+        # best_seen[(x, y, visitedSet)] = best sum found so far
+        best_seen = {}
+        best_seen[(0,0,start_visited)] = 0
+
+        # we now expand the nodes in priority order
+        while priority_queue:
+            negative_priority, current_sum, x, y, visited_frozen_set, path = heapq.heappop(priority_queue) # we pop the highest-priority node 
+
+            # If we've got a path to (n-1,n-1), check if total sum is the best found so far
+            if (x, y) == (self.n - 1, self.n - 1):
+                if current_sum > self.best_value:
+                    self.best_value = current_sum
+                    self.best_path = path
+                continue
+
+            # Skip if current sum is worse t avoid revisiting worse paths
+            if best_seen.get((x, y, visited_frozen_set), float('-inf')) > current_sum:
+                continue
+
+            # we loop over each direction to get the next node (new_x, new_y)
+            for delta_x, delta_y in self.directions: # using only the legal direction moves previous established to update x and y to new_x and new_y
+                new_x, new_y = x + delta_x, y + delta_y # compute the next position
+                # we explore only valid moves within board
+                if 0 <= new_x < self.n and 0 <= new_y < self.n:
+                    # check if we already visited the position (prevents revisiting old cells)
+                    if (new_x, new_y) not in visited_frozen_set:
+                        new_sum = current_sum + self.board.get_value(new_x, new_y) # adds the value of the new cell to our total sum
+                        new_visited = set(visited_frozen_set) # track the visited cells for this path
+                        new_visited.add((new_x, new_y)) # updates visited nodes by adding (new_x, new_y)
+                        new_frozen_set = frozenset(new_visited) # updates our frozen set to contain the new node/cell
+
+                        # check if the current sum is better than previously found sum. Reason for this is if we already visited this position with a better sum
+                        # we skip this path entirely
+                        old_sum = best_seen.get((new_x, new_y, new_frozen_set), float('-inf'))
+                        if new_sum <= old_sum:
+                            continue
+                        
+                        # update the best seen dictionary. This saves the best sum found so far for (new_x, new_y, new_frozen_set)
+                        best_seen[(new_x, new_y, new_frozen_set)] = new_sum
+
+                        # compute the max possible gain we can attain in the future (this is the bounding step)
+                        visited_count = len(new_frozen_set)
+                        future = self.possible_gain(visited_count)
+                        # skip the paths the are not better than the best path (pruning step)
+                        if new_sum + future <= self.best_value:
+                            continue
+                        
+                        # add (push) the new path to the priority queue 
+                        new_path = path + [(new_x, new_y)]
+                        distance_to_goal = (self.n - 1 - new_x) + (self.n - 1 - new_y) # prioritize the distance to the goal (useful when values at each direction are the same)
+                        new_priority = new_sum + future - distance_to_goal 
+                        heapq.heappush(priority_queue, (-new_priority, new_sum, new_x, new_y, new_frozen_set, new_path))
+
+                       
 
     def find_best_path(self):
-        flattened = self.flatten_grid()
+        self.branch_and_bound()
+        return self.best_path, self.best_value
 
-        # set the starting point to 0,0 to with an initial value of 0
-        start_x, start_y, start_value = 0, 0, 0
-        visited = set()
-        # call build_path_Tree with these starting parameters
-        best_path, best_value = self.build_path_tree(start_x, start_y, [], start_value, visited)
 
-        # returns final answer
-        return best_path, best_value
