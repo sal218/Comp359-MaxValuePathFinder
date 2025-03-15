@@ -92,13 +92,12 @@ class PathFinder:
                         visited_count = len(new_frozen_set)
                         future = self.possible_gain(visited_count)
                         # skip the paths the are not better than the best path (pruning step)
-                        if new_sum + future <= self.best_value:
+                        if new_sum + future <= self.best_value - 10: # allow for some flexibility/buffer before pruning to avoid removing a potentially more promising path
                             continue
                         
                         # add (push) the new path to the priority queue 
                         new_path = path + [(new_x, new_y)]
-                        distance_to_goal = (self.n - 1 - new_x) + (self.n - 1 - new_y) # prioritize the distance to the goal (useful when values at each direction are the same)
-                        new_priority = new_sum + future - distance_to_goal 
+                        new_priority = new_sum + future
                         heapq.heappush(priority_queue, (-new_priority, new_sum, new_x, new_y, new_frozen_set, new_path))
 
                        

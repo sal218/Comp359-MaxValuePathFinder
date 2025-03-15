@@ -33,6 +33,7 @@ def draw_board_and_path(canvas, board, path):
                 font=("Arial", 14, "bold")
             )
 
+
     for idx in range(len(path) - 1):
         (x_curr, y_curr) = path[idx]
         (x_next, y_next) = path[idx + 1]
@@ -73,7 +74,7 @@ def main():
     grid = [
         [  0,  -10, -10,  -10, -10, -10 ],
         [  3,   -9, -10,  -10, -10, -10 ],
-        [ 10,  -1,   9,  -10, -10, -10 ],
+        [ 10,  5,   9,  -10, -10, -10 ],
         [ 8, 6,  5,   7, -10, -10 ],
         [ -10, -10, -4,   -1,  3,   2 ],
         [ -10, -10, -10,  -10,   1,   0 ],
